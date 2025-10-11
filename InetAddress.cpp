@@ -1,5 +1,7 @@
 #include "InetAddress.h"
 
+InetAddress::InetAddress() {}
+
 // 服务端监听fd
 InetAddress::InetAddress(const std::string &ip, uint16_t port) {
     m_addr.sin_family = AF_INET;
@@ -32,4 +34,9 @@ const char *InetAddress::getIp() const {
 // 获取port
 uint16_t InetAddress::getPort() const {
     return ntohs(m_addr.sin_port);
+}
+
+// 设置地址结构体            
+void InetAddress::setAddr(sockaddr_in addr) {
+    m_addr = addr;
 }
