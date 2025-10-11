@@ -1,0 +1,10 @@
+server
+client
+*.o
+*.a
+*.so
+*.out
+build/
+bin/
+*.log
+.DS_Store
