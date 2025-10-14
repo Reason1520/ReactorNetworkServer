@@ -1,7 +1,11 @@
 #include "Channel.h"
+#include "InetAddress.h"
+#include "Socket.h"
+#include "EventLoop.h"
+#include <cstring>
 
 // 构造函数
-Channel::Channel(int fd, Epoll *epoll) : m_fd(fd), m_epoll(epoll) {
+Channel::Channel(int fd, EventLoop *eventloop) : m_fd(fd), m_eventloop(eventloop) {
 }
 
 // 析构函数
@@ -49,8 +53,8 @@ void Channel::setEdgeTriggered() {
 
 // 设置EPOLLOUT(让epoll_wait()监听m_fd的读事件)
 void Channel::enableReading() {
-    m_events = m_events | EPOLLIN;
-    m_epoll->updateChannel(this);
+    m_events = m_events | EPOLLIN;      // 设置监听EPOLLIN
+    m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
 }
 
 // 事件处理函数,epoll_wait()返回时执行
@@ -77,10 +81,10 @@ void Channel::handleNewConnection(Socket *listen_socket) {
 
     printf("新连接: fd %d, ip %s:%d\n", client_socket->getFd(), client_addr.getIp(), client_addr.getPort());
 
-    Channel *client_channel = new Channel(client_socket->getFd(), m_epoll);  // 创建clientfd的Channel对象
-    client_channel->enableReading();                                                // 将listnefd的Channel对象设置为可读
-    client_channel->setEdgeTriggered();                                             // 设置为边缘触发
-    client_channel->setReadCallback(std::bind(&Channel::handleMessage, client_channel));      // 设置读事件处理函数为处理对端发来的消息
+    Channel *client_channel = new Channel(client_socket->getFd(), m_eventloop);             // 创建clientfd的Channel对象
+    client_channel->enableReading();                                                        // 将client的Channel对象设置为可读
+    client_channel->setEdgeTriggered();                                                     // 设置为边缘触发
+    client_channel->setReadCallback(std::bind(&Channel::handleMessage, client_channel));    // 设置读事件处理函数为处理对端发来的消息
 }
 
 // 处理对端发来的消息

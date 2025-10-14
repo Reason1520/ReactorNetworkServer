@@ -1,22 +1,27 @@
 #pragma once
+#ifndef CHANNEL_H
+#define CHANNEL_H
+
 #include <sys/epoll.h>
 #include <functional>
-#include "Socket.h"
-#include "Epoll.h"
-#include "InetAddress.h"
+#include <string>
+
+class Socket;
+class EventLoop;
 
 class Channel
 {
 private:
-    int m_fd;                        // Channel拥有的fd
-    struct Epoll *m_epoll = nullptr; // 携带此Channel的epoll_event所在的epoll红黑树
-    bool m_isEpollIn = false;        // 携带此Channel的epoll_event是否在epoll红黑树中
-    uint32_t m_events = 0;           // 监听的事件(listnenfd监听EPOLLIN, clientfd监听EPOLLIN | EPOLLOUT)
-    uint32_t m_revents = 0;          // 已经触发的事件
+    int m_fd = -1;                      // Channel拥有的fd
+    //struct Epoll *m_epoll = nullptr; // 携带此Channel的epoll_event所在的epoll红黑树
+    EventLoop *m_eventloop = nullptr;   // 运行此Channel的eventloop
+    bool m_isEpollIn = false;           // 携带此Channel的epoll_event是否在epoll红黑树中
+    uint32_t m_events = 0;              // 监听的事件(listnenfd监听EPOLLIN, clientfd监听EPOLLIN | EPOLLOUT)
+    uint32_t m_revents = 0;             // 已经触发的事件
     std::function<void()> m_read_callback;  // 读事件回调函数
 
 public:
-    Channel(int fd, Epoll *epoll);   // 构造函数
+    Channel(int fd, EventLoop *eventloop);          // 构造函数
     ~Channel();                                     // 析构函数
     int getFd();                                    // 获取fd
     bool isEpollIn();                               // 获取是否在epoll红黑树中
@@ -33,3 +38,5 @@ public:
     void handleMessage();                               // 处理对端发来的消息
     void setReadCallback(std::function<void()> callback);   // 设置读事件回调函数
 };
+
+#endif

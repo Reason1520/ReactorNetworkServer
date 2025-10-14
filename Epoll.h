@@ -1,3 +1,6 @@
+#ifndef EPOLL_H
+#define EPOLL_H
+
 #pragma once
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -8,7 +11,6 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <vector>
-#include "Channel.h"
 
 class Channel;
 
@@ -29,3 +31,5 @@ public:
     // std::vector<epoll_event> wait(int timeout = -1);    // 等待事件
     std::vector<Channel *> wait(int timeout = -1);      // 等待事件
 };
+
+#endif

@@ -1,7 +1,7 @@
 all: server client
 
-server: server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp
-	g++ -o server server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp
+server: server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp EventLoop.cpp
+	g++ -o server server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp EventLoop.cpp
 
 client: client.cpp
 	g++ -o client client.cpp

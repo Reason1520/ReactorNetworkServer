@@ -9,9 +9,11 @@
 #include <sys/fcntl.h>
 #include <sys/epoll.h>
 #include <netinet/tcp.h>
-#include "InetAddress.h"
+
+#include "Channel.h"
+#include "EventLoop.h"
 #include "Socket.h"
-#include "Epoll.h"
+#include "InetAddress.h"
 
 int main(int argc, char *argv[])
 {
@@ -37,21 +39,13 @@ int main(int argc, char *argv[])
     // 监听端口
     listen_socket.listen();
 
-    // 设置epoll
-    Epoll epoll;                                                                // 创建Epoll对象
-    Channel *server_channel = new Channel(listen_socket.getFd(), &epoll); // 创建listenfd的Channel对象
-    server_channel->setReadCallback(std::bind(&Channel::handleNewConnection, server_channel, &listen_socket)); // Channel对象的回调函数为新连接处理函数
-    server_channel->enableReading();                                            // 将listnefd的Channel对象设置为可读
+    // 创建监听Channel和事件循环对象Eventloop
+    EventLoop loop;
+    Channel *server_channel = new Channel(listen_socket.getFd(), &loop);                                        // 创建listenfd的Channel对象
+    server_channel->setReadCallback(std::bind(&Channel::handleNewConnection, server_channel, &listen_socket));  // Channel对象的回调函数为新连接处理函数
+    server_channel->enableReading();                                                                            // 将listnefd的Channel对象设置为可读
 
     // 循环处理事件
-    while (true) {
-        std::vector<Channel *> channels;    // 创建返回Channel数组指针
-        channels = epoll.wait();            // 等待事件
-
-        // 处理所有发生的事件
-        for (auto &channel : channels) {
-            channel->handleEvent();   // 处理事件
-        }
-    }
+    loop.run();
     return 0;
 }
