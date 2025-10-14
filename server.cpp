@@ -39,19 +39,18 @@ int main(int argc, char *argv[])
 
     // 设置epoll
     Epoll epoll;                                                                // 创建Epoll对象
-    Channel *server_channel = new Channel(listen_socket.getFd(), &epoll, true); // 创建listenfd的Channel对象
+    Channel *server_channel = new Channel(listen_socket.getFd(), &epoll); // 创建listenfd的Channel对象
+    server_channel->setReadCallback(std::bind(&Channel::handleNewConnection, server_channel, &listen_socket)); // Channel对象的回调函数为新连接处理函数
     server_channel->enableReading();                                            // 将listnefd的Channel对象设置为可读
 
     // 循环处理事件
-    while (true)
-    {
+    while (true) {
         std::vector<Channel *> channels;    // 创建返回Channel数组指针
         channels = epoll.wait();            // 等待事件
 
         // 处理所有发生的事件
-        for (auto &channel : channels)
-        {
-            channel->handleEvent(&listen_socket);
+        for (auto &channel : channels) {
+            channel->handleEvent();   // 处理事件
         }
     }
     return 0;

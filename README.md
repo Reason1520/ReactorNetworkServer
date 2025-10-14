@@ -9,5 +9,5 @@
 - `InetAddress.h/cpp` - 网络地址类,处理地址相关
 - `Socket.h/cpp` - 网络套接字类,用于封装socket
 - `Epoll.h/cpp` - Epoll类,用于封装epoll
-- `Channel.h/cpp` - 通道类,用于封装文件描述符和事件,随epoll_event传递
+- `Channel.h/cpp` - 通道类,用于封装文件描述符和事件,并进行事件处理;随epoll_event传递
 - `makefile` - 编译配置
