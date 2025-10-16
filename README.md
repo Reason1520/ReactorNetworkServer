@@ -12,4 +12,6 @@
 - `Channel.h/cpp` - 通道类,用于封装文件描述符和事件,并进行事件处理;随epoll_event传递
 - `EventLoop.h/cpp` - 事件循环类,用于处理事件
 - `TCPSServer.h/cpp` - 使用TCP协议实现的服务器类
+- `Acceptor.h/cpp` - 接收器类,用于接收客户端连接请求
+- `Connetion.h/cpp` - 连接类,用于运行与客户端的连接
 - `makefile` - 编译配置

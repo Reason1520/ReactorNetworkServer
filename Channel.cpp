@@ -2,6 +2,7 @@
 #include "InetAddress.h"
 #include "Socket.h"
 #include "EventLoop.h"
+#include "Connection.h"
 #include <cstring>
 
 // 构造函数
@@ -72,19 +73,6 @@ void Channel::handleEvent() {
         printf("未知事件: fd %d, events %d\n", m_fd, m_revents);
         close(m_fd);
     }
-}
-
-// 处理新客户端连接请求
-void Channel::handleNewConnection(Socket *listen_socket) {
-    InetAddress client_addr;                                                        // 客户端的地址和协议信息
-    Socket *client_socket = new Socket(listen_socket->accept(client_addr));         // 客户端的socket对象
-
-    printf("新连接: fd %d, ip %s:%d\n", client_socket->getFd(), client_addr.getIp(), client_addr.getPort());
-
-    Channel *client_channel = new Channel(client_socket->getFd(), m_eventloop);             // 创建clientfd的Channel对象
-    client_channel->enableReading();                                                        // 将client的Channel对象设置为可读
-    client_channel->setEdgeTriggered();                                                     // 设置为边缘触发
-    client_channel->setReadCallback(std::bind(&Channel::handleMessage, client_channel));    // 设置读事件处理函数为处理对端发来的消息
 }
 
 // 处理对端发来的消息

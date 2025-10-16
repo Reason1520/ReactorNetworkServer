@@ -1,0 +1,38 @@
+
+digraph ReactorNetworkServer {
+    rankdir=LR;
+    node [shape=box, fontname="Helvetica"];
+
+    ServerMain [label="server.cpp\nmain() -> TCPServer"];
+    TCPServer [label="TCPServer\n+m_loop: EventLoop\n+start()\n+newConnection()"];
+    EventLoop [label="EventLoop\n+m_epoll: Epoll\n+run()\n+updateChannel()"];
+    Epoll [label="Epoll\n+epollfd\n+events[]\n+updateChannel()\n+wait()"];
+    Acceptor [label="Acceptor\n+m_listen_socket\n+m_listen_channel\n+handleNewConnection()"];
+    Channel [label="Channel\n+m_fd\n+m_events\n+m_revents\n+m_read_callback\n+handleEvent()\n+handleMessage()"];
+    Connection [label="Connection\n+m_client_socket\n+m_client_channel"];
+    Socket [label="Socket\n+m_fd\n+bind()/listen()/accept()\n+setsockopt()"];
+    InetAddress [label="InetAddress\n+m_addr"];
+    ClientApp [label="client.cpp\nclient app"];
+
+    // ownership / creation
+    ServerMain -> TCPServer [label="creates"];
+    TCPServer -> Acceptor [label="creates (m_acceptor)"];
+    Acceptor -> Socket [label="creates (listen socket)"];
+    Acceptor -> Channel [label="creates (listen channel)"];
+    Acceptor -> TCPServer [label="calls new_connection_callback"];
+
+    // runtime links
+    TCPServer -> EventLoop [label="owns (m_loop)"];
+    EventLoop -> Epoll [label="owns"];
+    Epoll -> Channel [label="manages (epoll_ctl)"];
+    EventLoop -> Channel [label="calls handleEvent() on"];
+
+    // accept -> connection
+    Acceptor -> Connection [label="invokes -> new Connection"];
+    Connection -> Channel [label="creates client Channel"];
+    Connection -> Socket [label="owns client Socket"];
+
+    // helpers
+    Socket -> InetAddress [label="uses"];
+    ClientApp -> ServerMain [label="connects to"];
+}
