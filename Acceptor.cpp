@@ -37,8 +37,6 @@ void Acceptor::handleNewConnection()
 {
     InetAddress client_addr;                                                    // 客户端的地址和协议信息
     Socket *client_socket = new Socket(m_listen_socket->accept(client_addr));   // 客户端的socket对象
-
-    printf("新连接: fd %d, ip %s:%d\n", client_socket->getFd(), client_addr.getIp(), client_addr.getPort());
     
     m_new_connection_callback(client_socket);                                   // 调用新连接回调函数,处理新连接
 }

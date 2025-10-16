@@ -23,6 +23,16 @@ int Socket::getFd() const {
     return m_fd;
 }
 
+// 获取ip
+std::string Socket::getIp() const {
+    return m_ip;
+}
+
+// 获取端口
+uint16_t Socket::getPort() const {
+    return m_port;
+}
+
 // 设置地址复用
 void Socket::setReuseaddr(bool on) {
     int optval = on ? 1 : 0;
@@ -54,6 +64,8 @@ void Socket::bindAddress(const InetAddress &server_addr) {
         close(m_fd);
         exit(-1);
     }
+    m_ip = server_addr.getIp();     // 设置ip
+    m_port = server_addr.getPort(); // 设置端口
 }
 
 // 监听
@@ -70,7 +82,11 @@ int Socket::accept(InetAddress &client_addr) {
     struct sockaddr_in pre_addr;                                                            // 客户端地址结构体
     socklen_t pre_addrlen = sizeof(pre_addr);                                               // 客户端地址长度
     int connfd = accept4(m_fd, (struct sockaddr *)&pre_addr, &pre_addrlen, SOCK_NONBLOCK);  // 接受连接,非阻塞
-    client_addr.setAddr(pre_addr);
+    client_addr.setAddr(pre_addr);                                                          // 设置客户端地址
+
+    // 有问题,后面修
+    //m_ip = client_addr.getIp();     // 设置ip
+    //m_port = client_addr.getPort(); // 设置端口
 
     return connfd;
 }

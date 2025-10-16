@@ -61,17 +61,15 @@ void Channel::enableReading() {
 // 事件处理函数,epoll_wait()返回时执行
 void Channel::handleEvent() {
     if (m_revents & EPOLLRDHUP) {                   // 如果是客户端关闭(或者recv返回0)
-        printf("客户端关闭: fd %d\n", this->getFd());
-        close(this->getFd());
+        m_close_callback(); // 调用关闭fd回调函数
     }
     else if (m_revents & (EPOLLIN | EPOLLPRI)) {    // 如果是读事件(普通数据|带外数据)
-        m_read_callback();    // 调用读事件处理函数
+        m_read_callback();  // 调用读事件处理函数
     }
     else if (m_revents & EPOLLOUT) {                // 如果是写事件
     }
     else {                                          // 其他事件(视为错误)
-        printf("未知事件: fd %d, events %d\n", m_fd, m_revents);
-        close(m_fd);
+        m_error_callback(); // 调用错误回调函数
     }
 }
 
@@ -93,8 +91,7 @@ void Channel::handleMessage() {
             break;
         }
         else if (ret == 0) {                                                    // 如果是客户端连接断开
-            printf("客户端关闭: fd %d\n", m_fd);
-            close(m_fd);
+            m_close_callback(); // 调用关闭fd回调函数
             break;
         }
     }
@@ -103,4 +100,14 @@ void Channel::handleMessage() {
 // 设置读事件回调函数
 void Channel::setReadCallback(std::function<void()> callback) {
     m_read_callback = callback;
+}
+
+// 设置关闭fd回调函数
+void Channel::setCloseCallback(std::function<void()> callback) {
+    m_close_callback = callback;
+}
+
+// 设置错误回调函数
+void Channel::setErrorCallback(std::function<void()> callback) {
+    m_error_callback = callback;
 }

@@ -18,6 +18,8 @@ private:
     uint32_t m_events = 0;                  // 监听的事件(listnenfd监听EPOLLIN, clientfd监听EPOLLIN | EPOLLOUT)
     uint32_t m_revents = 0;                 // 已经触发的事件
     std::function<void()> m_read_callback;  // 读事件回调函数
+    std::function<void()> m_close_callback; // 关闭fd回调函数,调Connection::m_cloes_callback()
+    std::function<void()> m_error_callback; // 错误回调函数,调Connection::m_error_callback()
 
 public:
     Channel(int fd, EventLoop *eventloop);          // 构造函数
@@ -35,6 +37,8 @@ public:
 
     void handleMessage();                                   // 处理对端发来的消息
     void setReadCallback(std::function<void()> callback);   // 设置读事件回调函数
+    void setCloseCallback(std::function<void()> callback);  // 设置关闭fd回调函数
+    void setErrorCallback(std::function<void()> callback);  // 设置错误回调函数
 };
 
 #endif
