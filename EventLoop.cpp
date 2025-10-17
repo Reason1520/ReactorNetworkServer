@@ -16,7 +16,11 @@ EventLoop::~EventLoop() {
 void EventLoop::run() {
     while (true) {
         std::vector<Channel *> channels;    // 创建返回Channel数组指针
-        channels = m_epoll->wait();         // 等待事件
+        channels = m_epoll->wait(10 *1000);         // 等待事件
+
+        if (channels.size() == 0) { //如果channels为空，表示超时,则回调TCPServer::epollTimeOut()
+            m_epoll_time_out_callback(this);
+        }
 
         // 处理所有发生的事件
         for (auto &channel : channels) {
@@ -33,4 +37,9 @@ Epoll *EventLoop::getEpoll() {
 // 更新channel
 void EventLoop::updateChannel(Channel *channel) {
     m_epoll->updateChannel(channel);
+}
+
+// 设置epoll_wait()超时回调函数
+void EventLoop::setEpollTimeOutCallback(std::function<void(EventLoop *)> callback) {
+    m_epoll_time_out_callback = callback;
 }

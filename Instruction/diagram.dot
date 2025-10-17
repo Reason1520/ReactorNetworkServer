@@ -3,36 +3,49 @@ digraph ReactorNetworkServer {
     rankdir=LR;
     node [shape=box, fontname="Helvetica"];
 
-    ServerMain [label="server.cpp\nmain() -> TCPServer"];
-    TCPServer [label="TCPServer\n+m_loop: EventLoop\n+start()\n+newConnection()"];
-    EventLoop [label="EventLoop\n+m_epoll: Epoll\n+run()\n+updateChannel()"];
-    Epoll [label="Epoll\n+epollfd\n+events[]\n+updateChannel()\n+wait()"];
-    Acceptor [label="Acceptor\n+m_listen_socket\n+m_listen_channel\n+handleNewConnection()"];
-    Channel [label="Channel\n+m_fd\n+m_events\n+m_revents\n+m_read_callback\n+handleEvent()\n+handleMessage()"];
-    Connection [label="Connection\n+m_client_socket\n+m_client_channel"];
-    Socket [label="Socket\n+m_fd\n+bind()/listen()/accept()\n+setsockopt()"];
-    InetAddress [label="InetAddress\n+m_addr"];
-    ClientApp [label="client.cpp\nclient app"];
+    ServerMain [label="server.cpp\nmain() -> EchoServer / TCPServer"];
+    EchoServer [label="EchoServer\n(业务层)\n+sets callbacks -> TCPServer"];
+    TCPServer [label="TCPServer\n+owns: EventLoop, Acceptor, connections map\n+API: start(), newConnection()"];
+    EventLoop [label="EventLoop\n+owns: Epoll\n+run()\n+updateChannel()"];
+    Epoll [label="Epoll\n+epollfd\n+events[]\n+update()/wait()"];
+    Acceptor [label="Acceptor\n+listen Socket\n+listen Channel\n+handleNewConnection()"];
+    Channel [label="Channel\n+fd, events, revents\n+read/write callbacks\n+handleEvent()"];
+    Connection [label="Connection\n+client Socket\n+client Channel\n+input/output Buffer\n+callbacks: onMessage,onClose,onError,onWriteComplete"];
+    Socket [label="Socket\n+fd ops: bind/listen/accept/setnonblock\n+close()"];
+    InetAddress [label="InetAddress\n+ip/port wrapper"];
+    Buffer [label="Buffer\n+read()/append()/retrieve()\n+used by Connection"];
+    ClientApp [label="client.cpp / client2.cpp\n(test clients)"];
 
-    // ownership / creation
-    ServerMain -> TCPServer [label="creates"];
+    // creation & ownership
+    ServerMain -> EchoServer [label="creates"];
+    EchoServer -> TCPServer [label="creates / configures"];
     TCPServer -> Acceptor [label="creates (m_acceptor)"];
-    Acceptor -> Socket [label="creates (listen socket)"];
-    Acceptor -> Channel [label="creates (listen channel)"];
-    Acceptor -> TCPServer [label="calls new_connection_callback"];
-
-    // runtime links
     TCPServer -> EventLoop [label="owns (m_loop)"];
     EventLoop -> Epoll [label="owns"];
-    Epoll -> Channel [label="manages (epoll_ctl)"];
-    EventLoop -> Channel [label="calls handleEvent() on"];
+    Acceptor -> Socket [label="creates listen Socket"];
+    Acceptor -> Channel [label="creates listen Channel"];
 
-    // accept -> connection
-    Acceptor -> Connection [label="invokes -> new Connection"];
+    // runtime flows
+    Acceptor -> TCPServer [label="on accept: new_connection_callback"];
+    Acceptor -> Connection [label="accept -> new Connection()"];
     Connection -> Channel [label="creates client Channel"];
     Connection -> Socket [label="owns client Socket"];
+    Connection -> Buffer [label="uses input/output Buffer"];
 
-    // helpers
+    // event dispatch
+    Epoll -> Channel [label="manages (epoll_ctl)"];
+    EventLoop -> Channel [label="iterates & calls handleEvent()"];
+    Channel -> Connection [label="read event -> onMessage callback"];
+
+    // helpers / tests
     Socket -> InetAddress [label="uses"];
-    ClientApp -> ServerMain [label="connects to"];
+    ClientApp -> TCPServer [label="connects to"];
+
+    // stylistic clusters
+    subgraph cluster_runtime {
+        label = "Runtime components";
+        style=rounded;
+        EventLoop; Epoll; Channel; Connection; Buffer;
+    }
+
 }

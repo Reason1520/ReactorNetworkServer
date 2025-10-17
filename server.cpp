@@ -1,8 +1,4 @@
-#include "Channel.h"
-#include "EventLoop.h"
-#include "Socket.h"
-#include "InetAddress.h"
-#include "TCPServer.h"
+#include "EchoServer.h"
 
 int main(int argc, char *argv[])
 {
@@ -12,10 +8,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // 创建服务器
-    TCPServer server(argv[1], atoi(argv[2]));
+    // 创建回显服务器
+    EchoServer server(argv[1], atoi(argv[2]));
 
     // 启动
-    server.start();
+    server.Start();
     return 0;
 }

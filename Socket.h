@@ -22,12 +22,14 @@ public:
     int getFd() const;              // 获取fd
     std::string getIp() const;      // 获取ip
     uint16_t getPort() const;       // 获取端口
+    void setIPPort(const std::string &ip, uint16_t port); // 设置ip和端口
+
     void setReuseaddr(bool on);     // 设置地址复用
     void setReuseport(bool on);     // 设置端口复用
     void setKeepalive(bool on);     // 设置心跳检测
     void setTcpNoDelay(bool on);    // 关闭Nagle算法
 
-    void bindAddress(const InetAddress &server_addr);   // 绑定地址
-    void listen(int size = 128);                        // 监听
-    int accept(InetAddress &client_addr);               // 接收连接
+    void bindAddress(const InetAddress &server_addr);           // 绑定地址
+    void listen(int size = 128);                                // 监听
+    int accept(InetAddress &client_addr);                       // 接收连接
 };

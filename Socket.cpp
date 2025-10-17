@@ -64,8 +64,7 @@ void Socket::bindAddress(const InetAddress &server_addr) {
         close(m_fd);
         exit(-1);
     }
-    m_ip = server_addr.getIp();     // 设置ip
-    m_port = server_addr.getPort(); // 设置端口
+    setIPPort(server_addr.getIp(), server_addr.getPort());  // 设置ip和端口
 }
 
 // 监听
@@ -84,9 +83,11 @@ int Socket::accept(InetAddress &client_addr) {
     int connfd = accept4(m_fd, (struct sockaddr *)&pre_addr, &pre_addrlen, SOCK_NONBLOCK);  // 接受连接,非阻塞
     client_addr.setAddr(pre_addr);                                                          // 设置客户端地址
 
-    // 有问题,后面修
-    //m_ip = client_addr.getIp();     // 设置ip
-    //m_port = client_addr.getPort(); // 设置端口
-
     return connfd;
+}
+
+// 设置地址和端口
+void Socket::setIPPort(const std::string &ip, uint16_t port) {
+    m_ip = ip;
+    m_port = port;
 }

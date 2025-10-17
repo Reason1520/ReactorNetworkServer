@@ -36,7 +36,8 @@ Acceptor::~Acceptor()
 void Acceptor::handleNewConnection()
 {
     InetAddress client_addr;                                                    // 客户端的地址和协议信息
-    Socket *client_socket = new Socket(m_listen_socket->accept(client_addr));   // 客户端的socket对象
+    Socket *client_socket = new Socket(m_listen_socket->accept(client_addr));   // 客户端的Socket对象
+    client_socket->setIPPort(client_addr.getIp(), client_addr.getPort());       // 设置客户端Socket的IP和端口
     
     m_new_connection_callback(client_socket);                                   // 调用新连接回调函数,处理新连接
 }

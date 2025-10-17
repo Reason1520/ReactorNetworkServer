@@ -42,14 +42,13 @@ void Epoll::updateChannel(Channel *channel) {
 std::vector<Channel *> Epoll::wait(int timeout)
 {
     bzero(events, sizeof(events));
-    std::vector<Channel *> channels;                // 创建返回的vector
-    int nfds = epoll_wait(epollfd, events, 10, -1); // 等待事件发生
+    std::vector<Channel *> channels;                        // 创建返回的vector
+    int nfds = epoll_wait(epollfd, events, 10, timeout);    // 等待事件发生
     if (nfds < 0) {     //返回失败
         perror("epoll_wait 失败");
         exit(-1);
     }
-    if (nfds == 0) {    // 返回超时   
-        printf("epoll_wait 超时\n");
+    if (nfds == 0) {    // 返回超时(在Eventloop中处理)
         return channels;
     }
 

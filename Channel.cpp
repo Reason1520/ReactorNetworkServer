@@ -58,6 +58,25 @@ void Channel::enableReading() {
     m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
 }
 
+// 取消读事件
+void Channel::disableReading() {
+    m_events = m_events & (~EPOLLIN);   // 取消监听EPOLLIN
+    m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
+}
+
+// 注册写事件
+void Channel::enableWriting() {
+    m_events = m_events | EPOLLOUT;     // 监听EPOLLOUT
+    m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
+}
+
+// 取消写事件
+void Channel::disableWriting() {
+    m_events = m_events & (~EPOLLOUT);  // 取消监听EPOLLOUT
+    m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
+}
+
+
 // 事件处理函数,epoll_wait()返回时执行
 void Channel::handleEvent() {
     if (m_revents & EPOLLRDHUP) {                   // 如果是客户端关闭(或者recv返回0)
@@ -67,33 +86,10 @@ void Channel::handleEvent() {
         m_read_callback();  // 调用读事件处理函数
     }
     else if (m_revents & EPOLLOUT) {                // 如果是写事件
+        m_write_callback(); // 调用写事件处理函数
     }
     else {                                          // 其他事件(视为错误)
         m_error_callback(); // 调用错误回调函数
-    }
-}
-
-// 处理对端发来的消息
-void Channel::handleMessage() {
-    char buffer[1024];
-    while (true)
-    { // 由于采用边缘触发, 所以可能会有数据未读完的情况, 需要循环读取
-        memset(buffer, 0, sizeof(buffer));
-        ssize_t ret = recv(m_fd, buffer, sizeof(buffer), 0);
-        if (ret > 0) {                                                          // 如果有数据
-            printf("收到数据: fd: %d, data: %s\n", m_fd, buffer);
-            send(m_fd, buffer, strlen(buffer), 0);
-        }
-        else if (ret == -1 && errno == EINTR) {                                 // 如果是信号中断
-            continue;
-        }
-        else if (ret == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {  // 如果是数据已经读完
-            break;
-        }
-        else if (ret == 0) {                                                    // 如果是客户端连接断开
-            m_close_callback(); // 调用关闭fd回调函数
-            break;
-        }
     }
 }
 
@@ -110,4 +106,9 @@ void Channel::setCloseCallback(std::function<void()> callback) {
 // 设置错误回调函数
 void Channel::setErrorCallback(std::function<void()> callback) {
     m_error_callback = callback;
+}
+
+// 设置写事件回调函数
+void Channel::setWriteCallback(std::function<void()> callback) {
+    m_write_callback = callback;
 }
