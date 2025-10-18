@@ -1,5 +1,7 @@
 #pragma once
 #include <functional>
+#include <unistd.h>
+#include <syscall.h>
 
 class Channel;
 class Epoll;

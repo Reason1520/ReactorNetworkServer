@@ -16,7 +16,7 @@ private:
 
     std::function<void(Connection *)> m_close_callback;     // 关闭连接的回调函数,将回调TCPServer::m_closeConnection;
     std::function<void(Connection *)> m_error_callback;     // 错误处理回调函数,将回调TCPServer::m_errorConnection;
-    std::function<void(Connection *, std::string)> m_handle_message_callback;   // 处理对端发送过来的数据的回调函数,将回调TCPServer::m_handleMessage;
+    std::function<void(Connection *, std::string&)> m_handle_message_callback;   // 处理对端发送过来的数据的回调函数,将回调TCPServer::m_handleMessage;
     std::function<void(Connection *)> m_send_complete_callback; // 发送数据完成回调函数,将回调TCPServer::m_sendComplete;
 public:
     Connection(EventLoop *loop, Socket *client_socket); // 构造函数
@@ -32,7 +32,7 @@ public:
     
     void setCloseCallback(std::function<void(Connection *)> callback);                      // 设置关闭连接的回调函数
     void setErrorCallback(std::function<void(Connection *)> callback);                      // 设置错误处理回调函数
-    void setHandleMessageCallback(std::function<void(Connection *, std::string)> callback); // 设置处理对端发送过来的数据的回调函数
+    void setHandleMessageCallback(std::function<void(Connection *, std::string&)> callback); // 设置处理对端发送过来的数据的回调函数
     void setSendCompleteCallback(std::function<void(Connection *)> callback);               // 设置发送数据完成回调函数
 
     void send(const char *data, size_t size);   // 发送数据

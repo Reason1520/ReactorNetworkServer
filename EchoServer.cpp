@@ -1,6 +1,6 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip, const uint16_t port) : m_tcp_server(ip, port) {
+EchoServer::EchoServer(const std::string &ip, const uint16_t port, int thread_num) : m_tcp_server(ip, port, thread_num) {
     m_tcp_server.setNewConnectionCallback(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
     m_tcp_server.setCloseConnectionCallback(std::bind(&EchoServer::HandleCloseConnection, this, std::placeholders::_1));
     m_tcp_server.setErrorConnectionCallback(std::bind(&EchoServer::HandleErrorConnection, this, std::placeholders::_1));
@@ -21,6 +21,7 @@ void EchoServer::Start() {
 // 处理新客户端连接请求,在TCPServer类中回调
 void EchoServer::HandleNewConnection(Connection *connection) {
     std::cout << "New Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
+    printf("EchoServer::HandleNewConnection() thread is %ld.\n", syscall(SYS_gettid));
 }
 
 // 关闭客户端的连接,在TCPServer类中回调
@@ -34,13 +35,12 @@ void EchoServer::HandleErrorConnection(Connection *connection) {
 }
 
 // 处理客户端得请求报文,在TCPServer类中回调
-void EchoServer::HandleMessage(Connection *connection, std::string message) {
-    message = "回复: " + message;         // 回显业务
-    int len = message.size();             // 计算回应报文长度
-    std::string tempbuf((char *)&len, 4); // 把报文头部填充到回应报文中
-    tempbuf.append(message);              // 把报文内容填充到回应报文中
+void EchoServer::HandleMessage(Connection *connection, std::string &message) {
+    printf("EchoServer::HandleMessage() thread is %ld.\n", syscall(SYS_gettid));
 
-    connection->send(tempbuf.c_str(), tempbuf.size()); // 把临时缓冲区的数据发送给客户端
+    message = "回复: " + message;         // 回显业务
+
+    connection->send(message.data(), message.size()); // 把临时缓冲区的数据发送给客户端
 }
 
 // 数据发送完成,在TCPServer类中回调
@@ -50,5 +50,5 @@ void EchoServer::HandleSendComplete(Connection *connection) {
 
 // epoll_wait超时,在TCPServer类中回调
 void EchoServer::HandleEpollTimeOut(EventLoop *loop) {
-    std::cout << "Epoll Time Out" << std::endl;
+    //std::cout << "Epoll Time Out" << std::endl;
 }

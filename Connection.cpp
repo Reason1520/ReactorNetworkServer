@@ -106,7 +106,7 @@ void Connection::setErrorCallback(std::function<void(Connection *)> callback) {
 }
 
 // 设置处理对端发送过来的数据的回调函数
-void Connection::setHandleMessageCallback(std::function<void(Connection *, std::string)> callback) {
+void Connection::setHandleMessageCallback(std::function<void(Connection *, std::string&)> callback) {
     m_handle_message_callback = callback;
 }
 
@@ -117,6 +117,6 @@ void Connection::setSendCompleteCallback(std::function<void(Connection *)> callb
 
 // 发送数据
 void Connection::send(const char *data, size_t size) {
-    m_output_buffer.append(data, size);     // 把数据追加到Connection的发送缓冲区中
-    m_client_channel->enableWriting();      // 注册写事件
+    m_output_buffer.appendWithHead(data, size); // 把数据追加到Connection的发送缓冲区中
+    m_client_channel->enableWriting();          // 注册写事件
 }

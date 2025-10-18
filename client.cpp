@@ -46,21 +46,26 @@ int main(int argc, char *argv[]) {
         if (strcmp(buf, "q") == 0) {
             break;
         }
+        // 拼接报文
+        char tempbuf[1024];                     // 临时缓冲区,报文头部+报文内容
+        memset(tempbuf, 0, sizeof(tempbuf));
+        int len = strlen(buf);                  // 报文长度
+        memcpy(tempbuf, &len, 4);               // 拼接报文头部
+        memcpy(tempbuf + 4, buf, len);          // 拼接报文内容
 
         // 发送数据
-        if (send(sockfd, buf, strlen(buf), 0) == -1) {
+        if (send(sockfd, tempbuf, len + 4, 0) == -1) {
             perror("send error");
             close(sockfd);
             return -1;
         }
 
         // 接收数据
+        int revlen;
+        recv(sockfd, &revlen, 4, 0); // 接收报文长度
+
         memset(buf, 0, sizeof(buf));
-        if (recv(sockfd, buf, sizeof(buf), 0) == -1) {
-            perror("recv error");
-            close(sockfd);
-            return -1;
-        }
+        recv(sockfd, buf, revlen, 0); // 接收报文内容
         printf("recv: %s\n", buf);
     }
 }

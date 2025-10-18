@@ -12,6 +12,7 @@ public:
     ~Buffer();
 
     void append(const char *data, size_t size); // 把数据追加到Buffer中
+    void appendWithHead(const char *data, size_t size); // 把数据追加到Buffer中,并附加报文头部
     void erase(size_t pos, size_t len);         // 删除Buffer中数据,从pos开始,长度为len
     size_t size();                              // 获取Buffer中数据的大小
     const char *data();                         // 获取Buffer中数据的起始地址

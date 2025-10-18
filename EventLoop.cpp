@@ -14,6 +14,7 @@ EventLoop::~EventLoop() {
 
 // 运行循环
 void EventLoop::run() {
+    //printf("EventLoop::run() thread is %ld\n", syscall(SYS_gettid));
     while (true) {
         std::vector<Channel *> channels;    // 创建返回Channel数组指针
         channels = m_epoll->wait(10 *1000);         // 等待事件
