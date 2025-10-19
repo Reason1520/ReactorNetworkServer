@@ -1,10 +1,10 @@
 #include "ThreadPool.h"
 
 // 在构造函数中启动thhread_num个线程
-ThreadPool::ThreadPool(size_t thread_num) {
+ThreadPool::ThreadPool(size_t thread_num, const std::string& threadtype) :m_stop(false), m_thread_type(threadtype) {
     for (int i = 0; i < thread_num; i++) {  // 创建thread_num个线程
         m_threads.emplace_back([this]{  // 使用lambda表达式创建线程
-            printf("creat thread %ld\n", syscall(SYS_gettid));   // 获取当前线程ID
+            printf("creat %s thread %ld\n",m_thread_type.c_str(), syscall(SYS_gettid));   // 获取当前线程ID
             while (this->m_stop == false) {
                 std::function<void()> task;
                 {   // 锁的作用域
@@ -19,7 +19,7 @@ ThreadPool::ThreadPool(size_t thread_num) {
                     this->m_tasks.pop();                        // 从队头中删除
                 }
 
-                printf("thread is %ld\n", syscall(SYS_gettid));
+                printf("%s(%ld) execute task\n", m_thread_type.c_str(), syscall(SYS_gettid));
                 task(); // 执行任务
             }
         });
@@ -42,4 +42,5 @@ void ThreadPool::addTask(std::function<void()> task) {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_tasks.push(task); // 入队
     }
+    m_condition.notify_one(); // 唤醒一个等待的工作线程，执行新任务
 }
