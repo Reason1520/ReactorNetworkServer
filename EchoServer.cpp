@@ -20,23 +20,23 @@ void EchoServer::Start() {
 }
 
 // 处理新客户端连接请求,在TCPServer类中回调
-void EchoServer::HandleNewConnection(Connection *connection) {
+void EchoServer::HandleNewConnection(spConnection connection) {
     std::cout << "New Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
     printf("EchoServer::HandleNewConnection() thread is %ld.\n", syscall(SYS_gettid));
 }
 
 // 关闭客户端的连接,在TCPServer类中回调
-void EchoServer::HandleCloseConnection(Connection *connection) {
+void EchoServer::HandleCloseConnection(spConnection connection) {
     std::cout << "Close Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
 }
 
 // 客户端的连接错误,在TCPServer类中回调
-void EchoServer::HandleErrorConnection(Connection *connection) {
+void EchoServer::HandleErrorConnection(spConnection connection) {
     std::cout << "Error Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
 }
 
 // 处理客户端得请求报文,在TCPServer类中回调
-void EchoServer::HandleMessage(Connection *connection, std::string &message) {
+void EchoServer::HandleMessage(spConnection connection, std::string &message) {
     //printf("EchoServer::HandleMessage() thread is %ld.\n", syscall(SYS_gettid));
 
     // 把业务添加到线程池的任务队列中
@@ -44,7 +44,7 @@ void EchoServer::HandleMessage(Connection *connection, std::string &message) {
 }
 
 // 处理客户端得请求报文,用于添加给线程池
-void EchoServer::HandleMessage_thread(Connection *connection, std::string &message) {
+void EchoServer::HandleMessage_thread(spConnection connection, std::string &message) {
     //printf("EchoServer::HandleMessage_thread() thread is %ld.\n", syscall(SYS_gettid));
     message = "回复: " + message;         // 回显业务
 
@@ -52,7 +52,7 @@ void EchoServer::HandleMessage_thread(Connection *connection, std::string &messa
 }
 
 // 数据发送完成,在TCPServer类中回调
-void EchoServer::HandleSendComplete(Connection *connection) {
+void EchoServer::HandleSendComplete(spConnection connection) {
     std::cout << "Send Complete to " << connection->getIp() << ":" << connection->getPort() << std::endl;
 }
 

@@ -17,5 +17,6 @@ public:
     void run();         // 运行循环
     Epoll *getEpoll();  // 获取epoll
     void updateChannel(Channel *channel);   // 更新channel
+    void removeChannel(Channel *channel);   // 删除channel
     void setEpollTimeOutCallback(std::function<void(EventLoop *)> callback);    // 设置epoll_wait()超时回调函数
 };

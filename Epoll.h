@@ -26,9 +26,9 @@ public:
     ~Epoll();
 
     void getFd();                                       // 获取epollfd
-    // void addFd(int fd, uint32_t op);                    // 添加事件fd
+    // void addFd(int fd, uint32_t op);                 // 添加事件fd
     void updateChannel(Channel *channel);               // 把channel添加/更新到红黑树中
-    // std::vector<epoll_event> wait(int timeout = -1);    // 等待事件
+    void removeChannel(Channel *channel);               // 删除channel
     std::vector<Channel *> wait(int timeout = -1);      // 等待事件
 };
 

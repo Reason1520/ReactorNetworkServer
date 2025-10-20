@@ -38,6 +38,8 @@ public:
     void disableReading();                          // 取消读事件
     void enableWriting();                           // 注册写事件
     void disableWriting();                          // 取消写事件
+    void disableAll();                              // 禁用所有事件
+    void remove();                                  // 删除该Channel
 
     void handleEvent();                             // 事件处理函数,epoll_wait()返回时执行
 

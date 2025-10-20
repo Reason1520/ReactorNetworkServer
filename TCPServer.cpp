@@ -23,9 +23,6 @@ TCPServer::TCPServer(const std::string &ip, const uint16_t port, int thread_num)
 TCPServer::~TCPServer() {
     delete m_acceptor;                          // 释放监听套接字对象   
     delete m_main_loop;                         // 释放主事件循环对象
-    for (auto &connection : m_connections) {    // 释放连接对象
-        delete connection.second;
-    }
     for (auto &loop : m_sub_loops) {            // 释放从事件循环对象
         delete loop;
     }
@@ -39,8 +36,7 @@ void TCPServer::start() {
 
 // 处理新客户端连接请求
 void TCPServer::newConnection(Socket *client_socket) {
-    //Connection *connection = new Connection(m_main_loop, client_socket);                                // 创建连接对象(运行在主事件循环)
-    Connection *connection = new Connection(m_sub_loops[client_socket->getFd()%m_thread_num], client_socket);   // 创建连接对象(运行在从事件循环)
+    spConnection connection (new Connection(m_sub_loops[client_socket->getFd() % m_thread_num], client_socket)); // 创建连接对象(运行在从事件循环)
     connection->setCloseCallback(std::bind(&TCPServer::closeConnection, this, std::placeholders::_1));  // 设置连接关闭回调函数
     connection->setErrorCallback(std::bind(&TCPServer::errorConnection, this, std::placeholders::_1));  // 设置连接异常回调函数
     connection->setHandleMessageCallback(std::bind(&TCPServer::handleMessage, this, std::placeholders::_1, std::placeholders::_2)); // 设置处理报文回调函数
@@ -54,28 +50,26 @@ void TCPServer::newConnection(Socket *client_socket) {
 }
 
 // 关闭连接,在Connection类中回调
-void TCPServer::closeConnection(Connection *connection) {
+void TCPServer::closeConnection(spConnection connection) {
     if(m_close_connection_callback)m_close_connection_callback(connection);     // 回调EchoServer::HandleCloseConnection
     //printf("关闭连接: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
     m_connections.erase(connection->getFd());   // 删除连接对象
-    delete connection;                          // 释放连接对象
 }
 
 // 处理连接异常, 在Connection类中回调
-void TCPServer::errorConnection(Connection *connection) {
+void TCPServer::errorConnection(spConnection connection) {
     if (m_error_connection_callback)m_error_connection_callback(connection);    // 回调EchoServer::HandleErrorConnection
     //printf("连接异常: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
     m_connections.erase(connection->getFd());   // 删除连接对象
-    delete connection;                          // 释放连接对象
 }
 
 // 处理客户端请求报文,在Connection类中回调
-void TCPServer::handleMessage(Connection *connection, std::string &message) {
+void TCPServer::handleMessage(spConnection connection, std::string &message) {
     if(m_handle_message_callback)m_handle_message_callback(connection, message);    // 回调EchoServer::HandleMessage
 }
 
 // 处理连接发送完成, 在Channel类中回调
-void TCPServer::sendComplete(Connection *connection) {
+void TCPServer::sendComplete(spConnection connection) {
     //printf("发送完成: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
     
     if(m_send_complete_callback)m_send_complete_callback(connection);   // 回调EchoServer::HandleSendComplete
@@ -89,23 +83,23 @@ void TCPServer::epollTimeOut(EventLoop *loop) {
 }
 
 // 设置回调函数
-void TCPServer::setNewConnectionCallback(std::function<void(Connection *)> callback) {
+void TCPServer::setNewConnectionCallback(std::function<void(spConnection)> callback) {
     m_new_connection_callback = callback;
 }
 
-void TCPServer::setCloseConnectionCallback(std::function<void(Connection *)> callback) {
+void TCPServer::setCloseConnectionCallback(std::function<void(spConnection)> callback) {
     m_close_connection_callback = callback;
 }
 
-void TCPServer::setErrorConnectionCallback(std::function<void(Connection *)> callback) {
+void TCPServer::setErrorConnectionCallback(std::function<void(spConnection)> callback) {
     m_error_connection_callback = callback;
 }
 
-void TCPServer::setHandleMessageCallback(std::function<void(Connection *, std::string&)> callback) {
+void TCPServer::setHandleMessageCallback(std::function<void(spConnection, std::string&)> callback) {
     m_handle_message_callback = callback;
 }
 
-void TCPServer::setSendCompleteCallback(std::function<void(Connection *)> callback) {
+void TCPServer::setSendCompleteCallback(std::function<void(spConnection)> callback) {
     m_send_complete_callback = callback;
 }
 

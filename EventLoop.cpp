@@ -40,6 +40,12 @@ void EventLoop::updateChannel(Channel *channel) {
     m_epoll->updateChannel(channel);
 }
 
+// 删除channel
+void EventLoop::removeChannel(Channel *channel)
+{
+    m_epoll->removeChannel(channel);
+}
+
 // 设置epoll_wait()超时回调函数
 void EventLoop::setEpollTimeOutCallback(std::function<void(EventLoop *)> callback) {
     m_epoll_time_out_callback = callback;

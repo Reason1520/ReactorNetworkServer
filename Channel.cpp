@@ -76,6 +76,18 @@ void Channel::disableWriting() {
     m_eventloop->updateChannel(this);   // 更新epoll_wait()监听的fd
 }
 
+// 禁用所有事件
+void Channel::disableAll() {
+    m_events = 0;
+    m_eventloop->updateChannel(this);
+}
+
+// 删除Channel
+void Channel::remove() {
+    disableAll();
+    m_eventloop->removeChannel(this);
+}
+
 
 // 事件处理函数,epoll_wait()返回时执行
 void Channel::handleEvent() {

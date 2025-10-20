@@ -2,7 +2,7 @@
 #include <cstring>
 
 // 构造函数
-Connection::Connection(EventLoop *loop, Socket *client_socket) : m_loop(loop), m_client_socket(client_socket) {
+Connection::Connection(EventLoop *loop, Socket *client_socket) : m_loop(loop), m_client_socket(client_socket), m_diconnect(false) {
     m_client_channel = new Channel(client_socket->getFd(), m_loop);                     // 创建clientfd的Channel对象
     m_client_channel->setReadCallback(std::bind(&Connection::handleMessage, this));     // 设置读事件处理函数为处理对端发来的消息
     m_client_channel->setCloseCallback(std::bind(&Connection::close_callback, this));   // 设置关闭fd的回调函数
@@ -62,12 +62,12 @@ void Connection::handleMessage() {
 
                 printf("收到数据: fd: %d, data: %s\n", this->getFd(), message.c_str());
 
-                m_handle_message_callback(this, message);   // 回调TCPServer::handleMessage
+                m_handle_message_callback(shared_from_this(), message);   // 回调TCPServer::handleMessage
             }
             break;     
         }
         else if (ret == 0){                                                     // 如果是客户端连接断开
-            close_callback();   // 调用关闭fd回调函数
+            close_callback();           // 调用关闭fd回调函数
             break;
         }
     }
@@ -75,12 +75,16 @@ void Connection::handleMessage() {
 
 // 关闭连接的回调函数,供Channel调用
 void Connection::close_callback() {
-    m_close_callback(this);
+    m_diconnect = true;         // 设置断开连接标志位
+    m_client_channel->remove(); // 从事件循环中删除channel
+    m_close_callback(shared_from_this());
 }
 
 // 错误处理回调函数,供Channel调用
 void Connection::error_callback() {
-    m_error_callback(this);
+    m_diconnect = true;         // 设置断开连接标志位
+    m_client_channel->remove(); // 从事件循环中删除channel
+    m_error_callback(shared_from_this());
 }
 
 // 处理写事件的回调函数,供Channel调用
@@ -91,32 +95,36 @@ void Connection::write_callback() {
     }
     if (m_output_buffer.size() == 0) {
         m_client_channel->disableWriting();     // 如果发送缓冲区中没有数据,则取消注册写事件
-        m_send_complete_callback(this);         // 调用发送完成回调函数
+        m_send_complete_callback(shared_from_this()); // 调用发送完成回调函数
     }
 }
 
 // 设置关闭连接的回调函数
-void Connection::setCloseCallback(std::function<void(Connection *)> callback) {
+void Connection::setCloseCallback(std::function<void(spConnection)> callback) {
     m_close_callback = callback;
 }
 
 // 设置错误处理回调函数
-void Connection::setErrorCallback(std::function<void(Connection *)> callback) {
+void Connection::setErrorCallback(std::function<void(spConnection)> callback) {
     m_error_callback = callback;
 }
 
 // 设置处理对端发送过来的数据的回调函数
-void Connection::setHandleMessageCallback(std::function<void(Connection *, std::string&)> callback) {
+void Connection::setHandleMessageCallback(std::function<void(spConnection, std::string&)> callback) {
     m_handle_message_callback = callback;
 }
 
 // 设置发送完成回调函数
-void Connection::setSendCompleteCallback(std::function<void(Connection *)> callback) {
+void Connection::setSendCompleteCallback(std::function<void(spConnection)> callback) {
     m_send_complete_callback = callback;
 }
 
 // 发送数据
 void Connection::send(const char *data, size_t size) {
+    if (m_diconnect == true) {
+        printf("Connection::send() error, connection has disconnect\n");
+        return;
+    }
     m_output_buffer.appendWithHead(data, size); // 把数据追加到Connection的发送缓冲区中
     m_client_channel->enableWriting();          // 注册写事件
 }
