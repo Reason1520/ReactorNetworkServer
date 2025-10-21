@@ -9,7 +9,6 @@ EventLoop::EventLoop() : m_epoll(new Epoll) {
 
 // 析构函数
 EventLoop::~EventLoop() {
-    delete m_epoll; 
 }
 
 // 运行循环
@@ -28,11 +27,6 @@ void EventLoop::run() {
             channel->handleEvent(); // 处理事件
         }
     }
-}
-
-// 获取epoll对象
-Epoll *EventLoop::getEpoll() {
-    return m_epoll;
 }
 
 // 更新channel

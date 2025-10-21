@@ -6,14 +6,15 @@
 #include "Connection.h"
 #include "ThreadPool.h"
 #include <map>
+#include <memory>
 
 class TCPServer {
 private:
-    EventLoop *m_main_loop;                     // 主事件循环对象
-    std::vector<EventLoop *> m_sub_loops;       // 从事件循环对象集合
-    ThreadPool *m_thread_pool;                  // 线程池对象
+    std::unique_ptr<EventLoop> m_main_loop;     // 主事件循环对象
+    std::vector<std::unique_ptr<EventLoop>> m_sub_loops;       // 从事件循环对象集合
     int m_thread_num;                           // 线程池大小
-    Acceptor *m_acceptor;                       // 连接接收器对象
+    ThreadPool m_thread_pool;                   // 线程池对象
+    Acceptor m_acceptor;                        // 连接接收器对象
     std::map<int, spConnection> m_connections;  // 连接对象集合(fd,Connection)
 
     std::function<void(spConnection)> m_new_connection_callback;                // 回调EchoServer::HandleNewConnection
@@ -28,7 +29,7 @@ public:
 
     void start();                                                               // 启动服务
 
-    void newConnection(Socket *client_socket);                          // 处理新客户端连接请求,在Acceptor类中回调
+    void newConnection(std::unique_ptr<Socket> client_socket);         // 处理新客户端连接请求,在Acceptor类中回调
     void closeConnection(spConnection connection);                      // 关闭连接,在Connection类中回调
     void errorConnection(spConnection connection);                      // 处理连接异常,在Connection类中回调
     void handleMessage(spConnection connection, std::string &message);  // 处理客户端请求报文,在Connection类中回调

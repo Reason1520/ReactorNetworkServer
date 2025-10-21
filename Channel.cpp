@@ -3,10 +3,12 @@
 #include "Socket.h"
 #include "EventLoop.h"
 #include "Connection.h"
+#include "EventLoop.h"
 #include <cstring>
 
 // 构造函数
-Channel::Channel(int fd, EventLoop *eventloop) : m_fd(fd), m_eventloop(eventloop) {
+Channel::Channel(int fd, const std::unique_ptr<EventLoop>& eventloop) : m_fd(fd), m_eventloop(eventloop)
+{
 }
 
 // 析构函数

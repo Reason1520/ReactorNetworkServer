@@ -2,8 +2,12 @@
 #include <cstring>
 
 // 构造函数
-Connection::Connection(EventLoop *loop, Socket *client_socket) : m_loop(loop), m_client_socket(client_socket), m_diconnect(false) {
-    m_client_channel = new Channel(client_socket->getFd(), m_loop);                     // 创建clientfd的Channel对象
+Connection::Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> client_socket)
+    : m_loop(loop), m_client_socket(std::move(client_socket)), m_diconnect(false)
+{
+    // 在将 client_socket 移动到成员后，必须使用成员 m_client_socket 来获取 fd，
+    // 避免在初始化列表中访问已被 move 的参数导致未定义行为。
+    m_client_channel = std::make_unique<Channel>(m_client_socket->getFd(), m_loop);
     m_client_channel->setReadCallback(std::bind(&Connection::handleMessage, this));     // 设置读事件处理函数为处理对端发来的消息
     m_client_channel->setCloseCallback(std::bind(&Connection::close_callback, this));   // 设置关闭fd的回调函数
     m_client_channel->setErrorCallback(std::bind(&Connection::error_callback, this));   // 设置错误处理函数
@@ -12,11 +16,8 @@ Connection::Connection(EventLoop *loop, Socket *client_socket) : m_loop(loop), m
     m_client_channel->enableReading();                                                  // 将client的Channel对象设置为可读
 }
 
-
 // 析构函数
 Connection::~Connection() {
-    delete m_client_socket;
-    delete m_client_channel;
 }
 
 // 获取client的fd

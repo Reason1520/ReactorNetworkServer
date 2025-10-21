@@ -14,11 +14,11 @@ using spConnection = std::shared_ptr<Connection>;   // Connection智能指针
 class Connection:public std::enable_shared_from_this<Connection>
 {
 private:
-    Socket *m_client_socket;    // 连接套接字,在构造函数中创建
-    Channel *m_client_channel;  // Connetion对应的Channel,在构造函数中创建
-    EventLoop *m_loop;          // 运行loop的EventLoop,由外部传入
-    Buffer m_input_buffer;      // 接收缓冲区
-    Buffer m_output_buffer;     // 发送缓冲区
+    std::unique_ptr<Socket> m_client_socket;    // 连接套接字
+    std::unique_ptr<Channel> m_client_channel;  // Connetion对应的Channel,在构造函数中创建
+    const std::unique_ptr<EventLoop>& m_loop;   // 运行loop的EventLoop,由外部传入
+    Buffer m_input_buffer;          // 接收缓冲区
+    Buffer m_output_buffer;         // 发送缓冲区
     std::atomic_bool m_diconnect;   // 是否已经关闭连接
 
     std::function<void(spConnection)> m_close_callback;           // 关闭连接的回调函数,将回调TCPServer::m_closeConnection;
@@ -26,7 +26,7 @@ private:
     std::function<void(spConnection, std::string&)> m_handle_message_callback;   // 处理对端发送过来的数据的回调函数,将回调TCPServer::m_handleMessage;
     std::function<void(spConnection)> m_send_complete_callback;   // 发送数据完成回调函数,将回调TCPServer::m_sendComplete;
 public:
-    Connection(EventLoop *loop, Socket *client_socket); // 构造函数
+    Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> client_socket); // 构造函数
     ~Connection();                                      // 析构函数
     int getFd() const;                                  // 获取fd
     std::string getIp() const;                          // 获取ip

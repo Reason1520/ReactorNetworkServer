@@ -1,32 +1,24 @@
 #include "TCPServer.h"
 
 // 构造函数
-TCPServer::TCPServer(const std::string &ip, const uint16_t port, int thread_num) :m_thread_num(thread_num) {
-    m_main_loop = new EventLoop();                                                                              // 创建主事件循环对象
+TCPServer::TCPServer(const std::string &ip, const uint16_t port, int thread_num)
+    : m_thread_num(thread_num), m_main_loop(new EventLoop), m_acceptor(m_main_loop, ip, port), m_thread_pool(m_thread_num, "IO") {
     m_main_loop->setEpollTimeOutCallback(std::bind(&TCPServer::epollTimeOut, this, std::placeholders::_1));     // 设置epoll_wait超时回调函数
 
-    m_acceptor = new Acceptor(m_main_loop, ip, port);                                                           // 创建连接接收器对象
-    m_acceptor->setNewConnectionCallback(std::bind(&TCPServer::newConnection, this, std::placeholders::_1));    // 设置新连接回调函数
+    m_acceptor.setNewConnectionCallback(std::bind(&TCPServer::newConnection, this, std::placeholders::_1));    // 设置新连接回调函数
 
-    m_thread_pool = new ThreadPool(thread_num, "IO"); // 创建线程池对象
+     // 创建线程池对象
 
     // 创建从事件循环
     for (int i = 0; i < thread_num; i++) {
-        EventLoop *loop = new EventLoop();                                                                  // 创建从事件循环对象
-        loop->setEpollTimeOutCallback(std::bind(&TCPServer::epollTimeOut, this, std::placeholders::_1));    // 设置epoll_wait超时回调函数
-        m_thread_pool->addTask(std::bind(&EventLoop::run, loop));                                           // 启动从事件循环
-        m_sub_loops.push_back(loop);                                                                        // 保存从事件循环对象
+        m_sub_loops.emplace_back(std::make_unique<EventLoop>());                                                    // 创建从事件循环对象,存入容器中
+        m_sub_loops[i]->setEpollTimeOutCallback(std::bind(&TCPServer::epollTimeOut, this, std::placeholders::_1));  // 设置epoll_wait超时回调函数
+        m_thread_pool.addTask(std::bind(&EventLoop::run,m_sub_loops[i].get()));                                                   // 启动从事件循环
     }
 }
 
 // 析构函数
 TCPServer::~TCPServer() {
-    delete m_acceptor;                          // 释放监听套接字对象   
-    delete m_main_loop;                         // 释放主事件循环对象
-    for (auto &loop : m_sub_loops) {            // 释放从事件循环对象
-        delete loop;
-    }
-    delete m_thread_pool;                       // 释放线程池对象
 }
 
 // 启动服务器
@@ -35,8 +27,10 @@ void TCPServer::start() {
 }
 
 // 处理新客户端连接请求
-void TCPServer::newConnection(Socket *client_socket) {
-    spConnection connection (new Connection(m_sub_loops[client_socket->getFd() % m_thread_num], client_socket)); // 创建连接对象(运行在从事件循环)
+void TCPServer::newConnection(std::unique_ptr<Socket> client_socket) {
+    // 在移动 client_socket 之前先读取 fd 以确定分配到的子 loop，避免在同一表达式中既读取又移动导致未定义行为
+    int idx = client_socket->getFd() % m_thread_num;
+    spConnection connection (new Connection(m_sub_loops[idx], std::move(client_socket))); // 创建连接对象(运行在从事件循环)
     connection->setCloseCallback(std::bind(&TCPServer::closeConnection, this, std::placeholders::_1));  // 设置连接关闭回调函数
     connection->setErrorCallback(std::bind(&TCPServer::errorConnection, this, std::placeholders::_1));  // 设置连接异常回调函数
     connection->setHandleMessageCallback(std::bind(&TCPServer::handleMessage, this, std::placeholders::_1, std::placeholders::_2)); // 设置处理报文回调函数

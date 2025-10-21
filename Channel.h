@@ -4,16 +4,18 @@
 
 #include <sys/epoll.h>
 #include <functional>
-#include <string>
+#include "EventLoop.h"
+#include "InetAddress.h"
+#include "Socket.h"
+#include <memory>
 
-class Socket;
 class EventLoop;
 
 class Channel
 {
 private:
     int m_fd = -1;                          // Channel拥有的fd
-    EventLoop *m_eventloop = nullptr;       // 运行此Channel的eventloop
+    const std::unique_ptr<EventLoop>& m_eventloop = nullptr;       // 运行此Channel的eventloop
     bool m_isEpollIn = false;               // 携带此Channel的epoll_event是否在epoll红黑树中
     uint32_t m_events = 0;                  // 监听的事件(listnenfd监听EPOLLIN, clientfd监听EPOLLIN | EPOLLOUT)
     uint32_t m_revents = 0;                 // 已经触发的事件
@@ -23,7 +25,7 @@ private:
     std::function<void()> m_write_callback; // 写事件回调函数,调Connection::m_write_callback()
 
 public:
-    Channel(int fd, EventLoop *eventloop);          // 构造函数
+    Channel(int fd, const std::unique_ptr<EventLoop>& eventloop); // 构造函数
     ~Channel();                                     // 析构函数
     int getFd();                                    // 获取fd
     bool isEpollIn();                               // 获取是否在epoll红黑树中
