@@ -19,11 +19,11 @@ public:
 
     void Start();   // 启动服务
 
-    void HandleNewConnection(spConnection connection);                   // 处理新客户端连接请求,在TCPServer类中回调
-    void HandleCloseConnection(spConnection connection);                  // 关闭客户端的连接,在TCPServer类中回调
-    void HandleErrorConnection(spConnection connection);                   // 客户端的连接错误,在TCPServer类中回调
-    void HandleMessage(spConnection connection, std::string &message);      // 处理客户端得请求报文,在TCPServer类中回调
-    void HandleSendComplete(spConnection connection);                    // 数据发送完成,在TCPServer类中回调
+    void HandleNewConnection(spConnection connection);                  // 处理新客户端连接请求,在TCPServer类中回调
+    void HandleCloseConnection(spConnection connection);                // 关闭客户端的连接,在TCPServer类中回调
+    void HandleErrorConnection(spConnection connection);                // 客户端的连接错误,在TCPServer类中回调
+    void HandleMessage(spConnection connection, std::string &message);  // 处理客户端得请求报文,在TCPServer类中回调
+    void HandleSendComplete(spConnection connection);                   // 数据发送完成,在TCPServer类中回调
     void HandleEpollTimeOut(EventLoop *loop);                           // epoll_wait超时,在TCPServer类中回调
 
     void HandleMessage_thread(spConnection connection, std::string &message); // 处理客户端得请求报文,用于添加给线程池

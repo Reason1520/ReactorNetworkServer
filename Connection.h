@@ -16,7 +16,7 @@ class Connection:public std::enable_shared_from_this<Connection>
 private:
     std::unique_ptr<Socket> m_client_socket;    // 连接套接字
     std::unique_ptr<Channel> m_client_channel;  // Connetion对应的Channel,在构造函数中创建
-    const std::unique_ptr<EventLoop>& m_loop;   // 运行loop的EventLoop,由外部传入
+    EventLoop *m_loop;              // 运行loop的EventLoop,由外部传入
     Buffer m_input_buffer;          // 接收缓冲区
     Buffer m_output_buffer;         // 发送缓冲区
     std::atomic_bool m_diconnect;   // 是否已经关闭连接
@@ -26,7 +26,7 @@ private:
     std::function<void(spConnection, std::string&)> m_handle_message_callback;   // 处理对端发送过来的数据的回调函数,将回调TCPServer::m_handleMessage;
     std::function<void(spConnection)> m_send_complete_callback;   // 发送数据完成回调函数,将回调TCPServer::m_sendComplete;
 public:
-    Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> client_socket); // 构造函数
+    Connection(EventLoop *loop, std::unique_ptr<Socket> client_socket); // 构造函数
     ~Connection();                                      // 析构函数
     int getFd() const;                                  // 获取fd
     std::string getIp() const;                          // 获取ip
@@ -42,5 +42,6 @@ public:
     void setHandleMessageCallback(std::function<void(spConnection, std::string&)> callback);  // 设置处理对端发送过来的数据的回调函数
     void setSendCompleteCallback(std::function<void(spConnection)> callback);                 // 设置发送数据完成回调函数
 
-    void send(const char *data, size_t size);   // 发送数据
+    void send(const char *data, size_t size);           // 发送数据,不管是在线程中还是IO线程中,都调用这个函数
+    void send_in_loop(const char *data, size_t size);   // 发送数据,如果是在IO线程中,则直接调用这个函数,如果是在工作线程中,则把这个函数放到IO线程中执行
 };

@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     }
 
     // 创建回显服务器
-    EchoServer server(argv[1], atoi(argv[2]));
+    EchoServer server(argv[1], atoi(argv[2]), 3, 0);
 
     // 启动
     server.Start();

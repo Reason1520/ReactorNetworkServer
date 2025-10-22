@@ -38,9 +38,12 @@ void EchoServer::HandleErrorConnection(spConnection connection) {
 // 处理客户端得请求报文,在TCPServer类中回调
 void EchoServer::HandleMessage(spConnection connection, std::string &message) {
     //printf("EchoServer::HandleMessage() thread is %ld.\n", syscall(SYS_gettid));
-
-    // 把业务添加到线程池的任务队列中
-    m_thread_pool.addTask(std::bind(&EchoServer::HandleMessage_thread, this, connection, message));
+    if (m_thread_pool.size() == 0) {    // 如果没有工作线程池,直接使用IO线程处理
+        HandleMessage_thread(connection, message);
+    }
+    else {                              // 否则使用工作线程池处理
+        m_thread_pool.addTask(std::bind(&EchoServer::HandleMessage_thread, this, connection, message)); // 把业务添加到线程池的任务队列中
+    }
 }
 
 // 处理客户端得请求报文,用于添加给线程池

@@ -1,7 +1,7 @@
 #include "Acceptor.h"
 
 // 构造函数
-Acceptor::Acceptor(const std::unique_ptr<EventLoop>& loop, const std::string &ip, const uint16_t port)
+Acceptor::Acceptor(EventLoop *loop, const std::string &ip, const uint16_t port)
     : m_loop(loop), m_listen_socket(createNonblockingSocket()), m_listen_channel(m_listen_socket.getFd(), loop) {
     // 设置listenfd的属性
     m_listen_socket.setReuseaddr(true);  // 设置地址复用

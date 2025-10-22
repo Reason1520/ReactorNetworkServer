@@ -10,12 +10,12 @@
 
 class TCPServer {
 private:
-    std::unique_ptr<EventLoop> m_main_loop;     // 主事件循环对象
-    std::vector<std::unique_ptr<EventLoop>> m_sub_loops;       // 从事件循环对象集合
-    int m_thread_num;                           // 线程池大小
-    ThreadPool m_thread_pool;                   // 线程池对象
-    Acceptor m_acceptor;                        // 连接接收器对象
-    std::map<int, spConnection> m_connections;  // 连接对象集合(fd,Connection)
+    std::unique_ptr<EventLoop> m_main_loop;                 // 主事件循环对象
+    std::vector<std::unique_ptr<EventLoop>> m_sub_loops;    // 从事件循环对象集合
+    int m_thread_num;                                       // 线程池大小
+    ThreadPool m_thread_pool;                               // 线程池对象
+    Acceptor m_acceptor;                                    // 连接接收器对象
+    std::map<int, spConnection> m_connections;              // 连接对象集合(fd,Connection)
 
     std::function<void(spConnection)> m_new_connection_callback;                // 回调EchoServer::HandleNewConnection
     std::function<void(spConnection)> m_close_connection_callback;              // 回调EchoServer::HandleCloseConnection

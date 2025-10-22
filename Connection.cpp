@@ -2,7 +2,7 @@
 #include <cstring>
 
 // 构造函数
-Connection::Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> client_socket)
+Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> client_socket)
     : m_loop(loop), m_client_socket(std::move(client_socket)), m_diconnect(false)
 {
     // 在将 client_socket 移动到成员后，必须使用成员 m_client_socket 来获取 fd，
@@ -120,12 +120,23 @@ void Connection::setSendCompleteCallback(std::function<void(spConnection)> callb
     m_send_complete_callback = callback;
 }
 
-// 发送数据
+// 发送数据,不管是在线程中还是IO线程中,都调用这个函数
 void Connection::send(const char *data, size_t size) {
     if (m_diconnect == true) {
         printf("Connection::send() error, connection has disconnect\n");
         return;
     }
+    if (m_loop->is_in_loop_thread()) {  // 如果当前线程在IO线程中,则直接调用send_in_loop()
+        printf("Connection::send() in IO thread\n");
+        send_in_loop(data, size);
+    } else {                            // 否则,把发送数据的操作交给IO线程处理
+        printf("Connection::send() in other thread\n");
+        m_loop->addTask(std::bind(&Connection::send_in_loop, this, data, size));
+    }
+}
+
+// 发送数据,如果是在IO线程中,则直接调用这个函数,如果是在工作线程中,则把这个函数放到IO线程中执行
+void Connection::send_in_loop(const char *data, size_t size) {
     m_output_buffer.appendWithHead(data, size); // 把数据追加到Connection的发送缓冲区中
     m_client_channel->enableWriting();          // 注册写事件
 }

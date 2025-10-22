@@ -44,3 +44,8 @@ void ThreadPool::addTask(std::function<void()> task) {
     }
     m_condition.notify_one(); // 唤醒一个等待的工作线程，执行新任务
 }
+
+// 返回线程池的大小
+ssize_t ThreadPool::size() const {
+    return m_threads.size();
+}

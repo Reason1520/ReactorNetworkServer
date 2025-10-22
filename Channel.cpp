@@ -7,7 +7,7 @@
 #include <cstring>
 
 // 构造函数
-Channel::Channel(int fd, const std::unique_ptr<EventLoop>& eventloop) : m_fd(fd), m_eventloop(eventloop)
+Channel::Channel(int fd,EventLoop *eventloop) : m_fd(fd), m_eventloop(eventloop)
 {
 }
 
