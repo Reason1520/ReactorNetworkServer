@@ -7,6 +7,7 @@
 #include "ThreadPool.h"
 #include <map>
 #include <memory>
+#include <mutex>
 
 class TCPServer {
 private:
@@ -16,6 +17,7 @@ private:
     ThreadPool m_thread_pool;                               // 线程池对象
     Acceptor m_acceptor;                                    // 连接接收器对象
     std::map<int, spConnection> m_connections;              // 连接对象集合(fd,Connection)
+    std::mutex m_connections_mutex;                         // 连接对象集合锁
 
     std::function<void(spConnection)> m_new_connection_callback;                // 回调EchoServer::HandleNewConnection
     std::function<void(spConnection)> m_close_connection_callback;              // 回调EchoServer::HandleCloseConnection
@@ -23,18 +25,20 @@ private:
     std::function<void(spConnection, std::string &)> m_handle_message_callback; // 回调EchoServer::HandleMessage
     std::function<void(spConnection)> m_send_complete_callback;                 // 回调EchoServer::HandleSendComplete
     std::function<void(EventLoop *)> m_epoll_time_out_callback;                 // 回调EchoServer::HandleEpollTimeOut
+    
 public:
     TCPServer(const std::string &ip, const uint16_t port, int thread_num);  // 构造函数
     ~TCPServer();                                                               // 析构函数
 
     void start();                                                               // 启动服务
 
-    void newConnection(std::unique_ptr<Socket> client_socket);         // 处理新客户端连接请求,在Acceptor类中回调
+    void newConnection(std::unique_ptr<Socket> client_socket);          // 处理新客户端连接请求,在Acceptor类中回调
     void closeConnection(spConnection connection);                      // 关闭连接,在Connection类中回调
     void errorConnection(spConnection connection);                      // 处理连接异常,在Connection类中回调
     void handleMessage(spConnection connection, std::string &message);  // 处理客户端请求报文,在Connection类中回调
     void sendComplete(spConnection connection);                         // 发送完成,在Connection类中回调
     void epollTimeOut(EventLoop *loop);                                 // epoll_wait,在EventLoop类中回调
+    void removeConnection(int fd);                                      // 删除Connection,在EventLoop::handletimer()中回调
 
     void setNewConnectionCallback(std::function<void(spConnection)> callback);      // 设置回调EchoServer::HandleNewConnection
     void setCloseConnectionCallback(std::function<void(spConnection)> callback);    // 设置回调EchoServer::HandleCloseConnection

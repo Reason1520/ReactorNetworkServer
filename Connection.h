@@ -6,7 +6,10 @@
 #include "Buffer.h"
 #include <memory>
 #include <atomic>
+#include "TimeStamp.h"
 
+class EventLoop;
+class Channel;
 class Connection;   // 前置声明
 using spConnection = std::shared_ptr<Connection>;   // Connection智能指针
 
@@ -20,11 +23,13 @@ private:
     Buffer m_input_buffer;          // 接收缓冲区
     Buffer m_output_buffer;         // 发送缓冲区
     std::atomic_bool m_diconnect;   // 是否已经关闭连接
+    TimeStamp m_last_time;          // 时间戳,创CConnection对象时为当前时间,每接收到一个报文,更新为当前时间
 
     std::function<void(spConnection)> m_close_callback;           // 关闭连接的回调函数,将回调TCPServer::m_closeConnection;
     std::function<void(spConnection)> m_error_callback;           // 错误处理回调函数,将回调TCPServer::m_errorConnection;
     std::function<void(spConnection, std::string&)> m_handle_message_callback;   // 处理对端发送过来的数据的回调函数,将回调TCPServer::m_handleMessage;
     std::function<void(spConnection)> m_send_complete_callback;   // 发送数据完成回调函数,将回调TCPServer::m_sendComplete;
+
 public:
     Connection(EventLoop *loop, std::unique_ptr<Socket> client_socket); // 构造函数
     ~Connection();                                      // 析构函数
@@ -44,4 +49,6 @@ public:
 
     void send(const char *data, size_t size);           // 发送数据,不管是在线程中还是IO线程中,都调用这个函数
     void send_in_loop(const char *data, size_t size);   // 发送数据,如果是在IO线程中,则直接调用这个函数,如果是在工作线程中,则把这个函数放到IO线程中执行
+
+    bool isTimeout(time_t now, time_t timeout);                         // 判断连接是否超时
 };

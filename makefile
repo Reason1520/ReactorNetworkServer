@@ -1,6 +1,6 @@
 all: server client client2
 
-SERVERFILES = server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp EventLoop.cpp TCPServer.cpp Acceptor.cpp Connection.cpp Buffer.cpp EchoServer.cpp ThreadPool.cpp
+SERVERFILES = server.cpp InetAddress.cpp Socket.cpp Epoll.cpp Channel.cpp EventLoop.cpp TCPServer.cpp Acceptor.cpp Connection.cpp Buffer.cpp EchoServer.cpp ThreadPool.cpp TimeStamp.cpp
 
 server: $(SERVERFILES)
 	g++ -o server $(SERVERFILES) -lpthread

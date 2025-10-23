@@ -2,7 +2,7 @@
 
 // 构造函数
 TCPServer::TCPServer(const std::string &ip, const uint16_t port, int thread_num)
-    : m_thread_num(thread_num), m_main_loop(new EventLoop), m_acceptor(m_main_loop.get(), ip, port), m_thread_pool(m_thread_num, "IO") {
+    : m_thread_num(thread_num), m_main_loop(new EventLoop(true)), m_acceptor(m_main_loop.get(), ip, port), m_thread_pool(m_thread_num, "IO") {
     m_main_loop->setEpollTimeOutCallback(std::bind(&TCPServer::epollTimeOut, this, std::placeholders::_1));     // 设置epoll_wait超时回调函数
 
     m_acceptor.setNewConnectionCallback(std::bind(&TCPServer::newConnection, this, std::placeholders::_1));    // 设置新连接回调函数
@@ -11,9 +11,10 @@ TCPServer::TCPServer(const std::string &ip, const uint16_t port, int thread_num)
 
     // 创建从事件循环
     for (int i = 0; i < thread_num; i++) {
-        m_sub_loops.emplace_back(std::make_unique<EventLoop>());                                                    // 创建从事件循环对象,存入容器中
+        m_sub_loops.emplace_back(new EventLoop(false, 5, 10));                                                      // 创建从事件循环对象,存入容器中
         m_sub_loops[i]->setEpollTimeOutCallback(std::bind(&TCPServer::epollTimeOut, this, std::placeholders::_1));  // 设置epoll_wait超时回调函数
-        m_thread_pool.addTask(std::bind(&EventLoop::run,m_sub_loops[i].get()));                                                   // 启动从事件循环
+        m_sub_loops[i]->setConnectionTimeoutCallback(std::bind(&TCPServer::removeConnection, this, std::placeholders::_1)); // 设置超时回调函数
+        m_thread_pool.addTask(std::bind(&EventLoop::run,m_sub_loops[i].get()));                                     // 启动从事件循环
     }
 }
 
@@ -38,23 +39,33 @@ void TCPServer::newConnection(std::unique_ptr<Socket> client_socket) {
 
     //printf("新连接: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
 
-    m_connections.insert(std::make_pair(connection->getFd(), connection));  // 把连接对象添加到map中
+    {
+        std::lock_guard<std::mutex> lock(m_connections_mutex);
+        m_connections.insert(std::make_pair(connection->getFd(), connection));  // 把连接对象添加到TCPServer的map中
+    }
+    m_sub_loops[idx]->newConnection(connection);                                // 把连接对象添加到EventLoop的map中
 
-    if(m_new_connection_callback)m_new_connection_callback(connection);     // 回调EchoServer::HandleNewConnection
+    if(m_new_connection_callback)m_new_connection_callback(connection);         // 回调EchoServer::HandleNewConnection
 }
 
 // 关闭连接,在Connection类中回调
 void TCPServer::closeConnection(spConnection connection) {
     if(m_close_connection_callback)m_close_connection_callback(connection);     // 回调EchoServer::HandleCloseConnection
     //printf("关闭连接: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
-    m_connections.erase(connection->getFd());   // 删除连接对象
+    {
+        std::lock_guard<std::mutex> lock(m_connections_mutex);
+        m_connections.erase(connection->getFd()); // 删除连接对象
+    }
 }
 
 // 处理连接异常, 在Connection类中回调
 void TCPServer::errorConnection(spConnection connection) {
     if (m_error_connection_callback)m_error_connection_callback(connection);    // 回调EchoServer::HandleErrorConnection
     //printf("连接异常: fd %d, ip %s:%d\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
-    m_connections.erase(connection->getFd());   // 删除连接对象
+    {
+        std::lock_guard<std::mutex> lock(m_connections_mutex);
+        m_connections.erase(connection->getFd()); // 删除连接对象
+    }
 }
 
 // 处理客户端请求报文,在Connection类中回调
@@ -74,6 +85,14 @@ void TCPServer::epollTimeOut(EventLoop *loop) {
     //printf("epoll_wait超时\n");
     
     if(m_epoll_time_out_callback)m_epoll_time_out_callback(loop);   // 回调EchoServer::HandleEpollTimeOut
+}
+
+// 删除Connection,在EventLoop::handletimer()中回调
+void TCPServer::removeConnection(int fd) {
+    {
+        std::lock_guard<std::mutex> lock(m_connections_mutex);
+        m_connections.erase(fd);
+    }
 }
 
 // 设置回调函数

@@ -18,6 +18,7 @@ Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> client_socket)
 
 // 析构函数
 Connection::~Connection() {
+    printf("Connection::~Connection()\n");
 }
 
 // 获取client的fd
@@ -61,7 +62,9 @@ void Connection::handleMessage() {
                 std::string message(m_input_buffer.data() + 4, len);    // 从input_buffer中获取一个报文内容
                 m_input_buffer.erase(0, len + 4);                       // 从input_buffer中删除已处理的数据
 
+                m_last_time = TimeStamp::now();  // 更新最后接收数据的时间
                 printf("收到数据: fd: %d, data: %s\n", this->getFd(), message.c_str());
+                std::cout << "last time =" << m_last_time.toString() << std::endl;
 
                 m_handle_message_callback(shared_from_this(), message);   // 回调TCPServer::handleMessage
             }
@@ -139,4 +142,9 @@ void Connection::send(const char *data, size_t size) {
 void Connection::send_in_loop(const char *data, size_t size) {
     m_output_buffer.appendWithHead(data, size); // 把数据追加到Connection的发送缓冲区中
     m_client_channel->enableWriting();          // 注册写事件
+}
+
+// 判断是否超时
+bool Connection::isTimeout(time_t now, time_t timeout) {
+    return now - m_last_time.toint() > timeout;
 }
