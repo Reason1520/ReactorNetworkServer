@@ -19,7 +19,7 @@ ThreadPool::ThreadPool(size_t thread_num, const std::string& threadtype) :m_stop
                     this->m_tasks.pop();                        // 从队头中删除
                 }
 
-                printf("%s(%ld) execute task\n", m_thread_type.c_str(), syscall(SYS_gettid));
+                //printf("%s(%ld) execute task\n", m_thread_type.c_str(), syscall(SYS_gettid));
                 task(); // 执行任务
             }
         });
@@ -28,12 +28,7 @@ ThreadPool::ThreadPool(size_t thread_num, const std::string& threadtype) :m_stop
 
 // 析构函数中停止所有线程
 ThreadPool::~ThreadPool() {
-    m_stop = true;
-    m_condition.notify_all();   // 唤醒所有线程
-
-    for (auto &thread : m_threads) {    // 等全部线程执行完后退出
-        thread.join();
-    }
+    stop();
 }
 
 // 添加任务到队列中
@@ -48,4 +43,15 @@ void ThreadPool::addTask(std::function<void()> task) {
 // 返回线程池的大小
 ssize_t ThreadPool::size() const {
     return m_threads.size();
+}
+
+// 停止线程池
+void ThreadPool::stop() {
+    if (m_stop) return;
+    m_stop = true;
+    m_condition.notify_all(); // 唤醒所有线程
+
+    for (auto &thread : m_threads) { // 等全部线程执行完后退出
+        thread.join();
+    }
 }

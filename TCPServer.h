@@ -31,6 +31,7 @@ public:
     ~TCPServer();                                                               // 析构函数
 
     void start();                                                               // 启动服务
+    void stop();                                                                // 停止服务
 
     void newConnection(std::unique_ptr<Socket> client_socket);          // 处理新客户端连接请求,在Acceptor类中回调
     void closeConnection(spConnection connection);                      // 关闭连接,在Connection类中回调

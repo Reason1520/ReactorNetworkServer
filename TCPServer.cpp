@@ -27,6 +27,23 @@ void TCPServer::start() {
     m_main_loop->run();
 }
 
+// 停止服务器
+void TCPServer::stop() {
+    // 停止主事件循环
+    m_main_loop->stop();
+    printf("主事件循环已停止\n");
+
+    // 停止从事件循环
+    for (int i = 0; i < m_sub_loops.size(); i++) {
+        m_sub_loops[i]->stop();
+    }
+    printf("从事件循环已停止\n");
+
+    // 停止IO线程
+    m_thread_pool.stop();
+    printf("IO线程已停止\n");
+}
+
 // 处理新客户端连接请求
 void TCPServer::newConnection(std::unique_ptr<Socket> client_socket) {
     // 在移动 client_socket 之前先读取 fd 以确定分配到的子 loop，避免在同一表达式中既读取又移动导致未定义行为

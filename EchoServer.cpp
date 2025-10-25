@@ -19,20 +19,30 @@ void EchoServer::Start() {
     m_tcp_server.start();
 }
 
+// 停止服务
+void EchoServer::Stop() {
+    // 停止工作线程
+    m_thread_pool.stop();
+    printf("工作线程已停止\n");
+
+    // 停止IO线程
+    m_tcp_server.stop();
+}
+
 // 处理新客户端连接请求,在TCPServer类中回调
 void EchoServer::HandleNewConnection(spConnection connection) {
-    std::cout << "New Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
-    printf("EchoServer::HandleNewConnection() thread is %ld.\n", syscall(SYS_gettid));
+    printf("new connection(fd = %d, ip = %s, port = %d) ok\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
+    // printf("EchoServer::HandleNewConnection() thread is %ld.\n", syscall(SYS_gettid));
 }
 
 // 关闭客户端的连接,在TCPServer类中回调
 void EchoServer::HandleCloseConnection(spConnection connection) {
-    std::cout << "Close Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
+    printf("close connection(fd = %d, ip = %s, port = %d) ok\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
 }
 
 // 客户端的连接错误,在TCPServer类中回调
 void EchoServer::HandleErrorConnection(spConnection connection) {
-    std::cout << "Error Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
+    //std::cout << "Error Connection from " << connection->getIp() << ":" << connection->getPort() << std::endl;
 }
 
 // 处理客户端得请求报文,在TCPServer类中回调
@@ -56,7 +66,7 @@ void EchoServer::HandleMessage_thread(spConnection connection, std::string &mess
 
 // 数据发送完成,在TCPServer类中回调
 void EchoServer::HandleSendComplete(spConnection connection) {
-    std::cout << "Send Complete to " << connection->getIp() << ":" << connection->getPort() << std::endl;
+    //std::cout << "Send Complete to " << connection->getIp() << ":" << connection->getPort() << std::endl;
 }
 
 // epoll_wait超时,在TCPServer类中回调

@@ -41,11 +41,12 @@ void Epoll::updateChannel(Channel *channel) {
 // 删除channel
 void Epoll::removeChannel(Channel *channel) {
     if (channel->isEpollIn()) {
-        printf("removeChannel\n");
+        //printf("removeChannel\n");
         if (epoll_ctl(epollfd, EPOLL_CTL_DEL, channel->getFd(), nullptr) < 0) {
             perror("epoll_ctl");
             exit(-1);
         }
+        channel->setEpollIn(false); // 标记该 channel 已不再在 epoll 红黑树中
     }
 }
 

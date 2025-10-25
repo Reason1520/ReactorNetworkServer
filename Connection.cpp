@@ -18,7 +18,7 @@ Connection::Connection(EventLoop *loop, std::unique_ptr<Socket> client_socket)
 
 // 析构函数
 Connection::~Connection() {
-    printf("Connection::~Connection()\n");
+    //printf("Connection::~Connection()\n");
 }
 
 // 获取client的fd
@@ -64,7 +64,7 @@ void Connection::handleMessage() {
 
                 m_last_time = TimeStamp::now();  // 更新最后接收数据的时间
                 printf("收到数据: fd: %d, data: %s\n", this->getFd(), message.c_str());
-                std::cout << "last time =" << m_last_time.toString() << std::endl;
+                //std::cout << "last time =" << m_last_time.toString() << std::endl;
 
                 m_handle_message_callback(shared_from_this(), message);   // 回调TCPServer::handleMessage
             }
@@ -130,10 +130,10 @@ void Connection::send(const char *data, size_t size) {
         return;
     }
     if (m_loop->is_in_loop_thread()) {  // 如果当前线程在IO线程中,则直接调用send_in_loop()
-        printf("Connection::send() in IO thread\n");
+        //printf("Connection::send() in IO thread\n");
         send_in_loop(data, size);
     } else {                            // 否则,把发送数据的操作交给IO线程处理
-        printf("Connection::send() in other thread\n");
+        //printf("Connection::send() in other thread\n");
         m_loop->addTask(std::bind(&Connection::send_in_loop, this, data, size));
     }
 }

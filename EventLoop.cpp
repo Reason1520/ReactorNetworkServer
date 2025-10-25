@@ -18,7 +18,7 @@ int createtimefd(int sec = 5)
 EventLoop::EventLoop(bool mainloop, int time_interval, int timeout)
     : m_epoll(new Epoll), m_wakeup_fd(eventfd(0, EFD_NONBLOCK)), m_wakeup_channel(new Channel(m_wakeup_fd, this)),
     m_timer_fd(createtimefd(timeout)), m_timer_channel(new Channel(m_timer_fd, this)), m_is_mainloop(mainloop),
-    m_timer_interval(time_interval), m_timeout(timeout) {
+    m_timer_interval(time_interval), m_timeout(timeout), m_stop(false) {
     m_wakeup_channel->setReadCallback(std::bind(&EventLoop::handleWakeup, this));   // 设置唤醒回调函数
     m_wakeup_channel->enableReading();
     m_timer_channel->setReadCallback(std::bind(&EventLoop::handleTimer, this));     // 设置定时器回调函数
@@ -33,7 +33,7 @@ EventLoop::~EventLoop() {
 void EventLoop::run() {
     //printf("EventLoop::run() thread is %ld\n", syscall(SYS_gettid));
     m_thread_id = syscall(SYS_gettid);      // 获取当前线程ID
-    while (true) {
+    while (m_stop == false) {
         std::vector<Channel *> channels;    // 创建返回Channel数组指针
         channels = m_epoll->wait(10 *1000);         // 等待事件
 
@@ -46,6 +46,12 @@ void EventLoop::run() {
             channel->handleEvent(); // 处理事件
         }
     }
+}
+
+// 停止循环
+void EventLoop::stop() {
+    m_stop = true;
+    wakeup();   // 唤醒事件循环,以退出
 }
 
 // 更新channel
@@ -86,7 +92,7 @@ void EventLoop::wakeup() {
 
 // 处理唤醒事件
 void EventLoop::handleWakeup() {
-    printf("handleWakeup() thread is %ld\n", syscall(SYS_gettid)); 
+    //printf("handleWakeup() thread is %ld\n", syscall(SYS_gettid)); 
     uint64_t one;
     read(m_wakeup_fd, &one, sizeof(one));       // 读取eventfd中的数据
 
@@ -114,10 +120,10 @@ void EventLoop::handleTimer() {
     }
     else {
         //printf("从事件循环的闹钟时间到了\n");
-        printf("EventLoop::handleTimer() thread is %ld ", syscall(SYS_gettid));
+        //printf("EventLoop::handleTimer() thread is %ld ", syscall(SYS_gettid));
         time_t now = time(0); // 获取当前时间
         for (auto it = m_connections_map.begin(); it != m_connections_map.end();) { // 遍历所有连接(迭代器安全写法)
-            printf("%d", it->first);
+            //printf("%d", it->first);
             if (it->second->isTimeout(now, m_timeout)) {
                 int fd = it->first;
                 auto conn = it->second;
@@ -131,7 +137,7 @@ void EventLoop::handleTimer() {
                 ++it;
             }
         }
-        printf("\n");
+        //printf("\n");
     }
 }
 

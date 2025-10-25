@@ -8,6 +8,7 @@
 #include <map>
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
+#include <atomic>
 #include "Connection.h"
 
 class Connection;
@@ -32,12 +33,14 @@ private:
     std::function<void(int)> m_connection_timeout_callback;     // 连接超时回调,删除TCPServer超时CConnection对象
     int m_timer_interval;                                       // 定时器间隔 
     int m_timeout;                                              // 连接超时时间
+    std::atomic_bool m_stop;                                    // 停止标志
 
 public:
     EventLoop(bool mainloop, int time_interval = 30, int timeout = 80);   // 构造函数
     ~EventLoop();               // 析构函数
 
     void run();                 // 运行循环
+    void stop();                // 停止循环
 
     void updateChannel(Channel *channel);   // 更新channel
     void removeChannel(Channel *channel);   // 删除channel
