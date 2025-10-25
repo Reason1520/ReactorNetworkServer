@@ -31,13 +31,13 @@ void EchoServer::Stop() {
 
 // 处理新客户端连接请求,在TCPServer类中回调
 void EchoServer::HandleNewConnection(spConnection connection) {
-    printf("new connection(fd = %d, ip = %s, port = %d) ok\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
+    printf("%s new connection(fd = %d, ip = %s, port = %d) ok\n", TimeStamp::now().toString().c_str(), connection->getFd(), connection->getIp().c_str(), connection->getPort());
     // printf("EchoServer::HandleNewConnection() thread is %ld.\n", syscall(SYS_gettid));
 }
 
 // 关闭客户端的连接,在TCPServer类中回调
 void EchoServer::HandleCloseConnection(spConnection connection) {
-    printf("close connection(fd = %d, ip = %s, port = %d) ok\n", connection->getFd(), connection->getIp().c_str(), connection->getPort());
+    printf("%s close connection(fd = %d, ip = %s, port = %d) ok\n", TimeStamp::now().toString().c_str(), connection->getFd(), connection->getIp().c_str(), connection->getPort());
 }
 
 // 客户端的连接错误,在TCPServer类中回调
@@ -59,6 +59,8 @@ void EchoServer::HandleMessage(spConnection connection, std::string &message) {
 // 处理客户端得请求报文,用于添加给线程池
 void EchoServer::HandleMessage_thread(spConnection connection, std::string &message) {
     //printf("EchoServer::HandleMessage_thread() thread is %ld.\n", syscall(SYS_gettid));
+    printf("%s 收到数据: fd: %d, data: %s\n", TimeStamp::now().toString().c_str(), connection->getFd(), message.c_str());
+
     message = "回复: " + message;         // 回显业务
 
     connection->send(message.data(), message.size()); // 把临时缓冲区的数据发送给客户端

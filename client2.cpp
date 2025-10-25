@@ -39,32 +39,31 @@ int main(int argc, char *argv[])
         return -1;
     }
     printf("connect (%s:%s) success\n", argv[1], argv[2]);
+    printf("开始事件: %ld\n", time(0));
 
     char buf[1024];
     // 发送数据
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 100000; i++)
     {
         memset(buf, 0, sizeof(buf));
         sprintf(buf, "这是第%d个超级女生", i);
 
-        char tempbuf[1024];             // 临时缓冲区,报文头部+报文内容
+        char tempbuf[1024];                 // 临时缓冲区,报文头部+报文内容
         memset(tempbuf, 0, sizeof(tempbuf));
-        int len = strlen(buf);          // 报文长度
-        memcpy(tempbuf, &len, 4);       // 拼接报文头部
-        memcpy(tempbuf + 4, buf, len);  // 拼接报文内容
+        int len = strlen(buf);              // 报文长度
+        memcpy(tempbuf, &len, 4);           // 拼接报文头部
+        memcpy(tempbuf + 4, buf, len);      // 拼接报文内容
 
         // 发送数据
         send(sockfd, tempbuf, len + 4, 0);
-    }
 
-    // 接收数据
-    for (int i = 0; i < 100; i++) {
-        int len;
+        // 接收数据
         recv(sockfd, &len, 4, 0);           // 接收报文长度
 
         memset(buf, 0, sizeof(buf));
-        recv(sockfd, buf, len, 0);  // 接收报文内容
+        recv(sockfd, buf, len, 0);          // 接收报文内容
 
-        printf("recv: %s\n", buf);
+        // printf("recv: %s\n", buf);
     }
+    printf("结束时间: %ld\n", time(0));
 }

@@ -43,28 +43,17 @@ void Connection::handleMessage() {
         memset(buffer, 0, sizeof(buffer));
         ssize_t ret = recv(this->getFd(), buffer, sizeof(buffer), 0);
         if (ret > 0) {                                                          // 如果有数据
-            //printf("收到数据: fd: %d, data: %s\n", this->getFd(), buffer);
-            //send(this->getFd(), buffer, strlen(buffer), 0); 
             m_input_buffer.append(buffer, ret); // 把读取到的数据追加到接收缓冲区中
         }
         else if (ret == -1 && errno == EINTR) {                                 // 如果是信号中断
             continue;
         }
         else if (ret == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {  // 如果是数据已经读完
-            //printf("收到数据: fd: %d, data: %s\n", this->getFd(), m_input_buffer.data());
+            std::string message;
             while (true) {
-                int len;
-                memcpy(&len, m_input_buffer.data(), 4);     // 从input_buffer中读取报文头部
-                if (m_input_buffer.size() < len + 4) {      // 如果接收缓冲区中的数据长度小于报文头部长度,表示报文不完整,下次再读取
-                    break;
-                }
-
-                std::string message(m_input_buffer.data() + 4, len);    // 从input_buffer中获取一个报文内容
-                m_input_buffer.erase(0, len + 4);                       // 从input_buffer中删除已处理的数据
+                if(m_input_buffer.pickMessage(message) == false) break;
 
                 m_last_time = TimeStamp::now();  // 更新最后接收数据的时间
-                printf("收到数据: fd: %d, data: %s\n", this->getFd(), message.c_str());
-                //std::cout << "last time =" << m_last_time.toString() << std::endl;
 
                 m_handle_message_callback(shared_from_this(), message);   // 回调TCPServer::handleMessage
             }
@@ -140,7 +129,7 @@ void Connection::send(const char *data, size_t size) {
 
 // 发送数据,如果是在IO线程中,则直接调用这个函数,如果是在工作线程中,则把这个函数放到IO线程中执行
 void Connection::send_in_loop(const char *data, size_t size) {
-    m_output_buffer.appendWithHead(data, size); // 把数据追加到Connection的发送缓冲区中
+    m_output_buffer.appendWithSep(data, size); // 把数据追加到Connection的发送缓冲区中
     m_client_channel->enableWriting();          // 注册写事件
 }
 
